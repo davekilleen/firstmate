@@ -8,6 +8,8 @@ When this session owns supervision and away mode is not active:
 4. Ordinary wake: if the command prints `signal:`, `stale:`, `check:`, or `heartbeat`, drain queued wakes, handle that wake, then start the next checkpoint.
 5. If the command prints `checkpoint:` or exits 124 with no wake, drain queued wakes anyway, process any queued user message now visible to Codex, then start the next checkpoint.
 6. Never use shell `&` or Codex background tasks for firstmate watcher supervision.
+   On Codex 0.172+ an `exec_command` that outlives its `yield_time_ms` keeps running as a background session and returns a `session_id`; that is NOT a live checkpoint for you, because its result reaches nobody once your turn ends.
+   Run the checkpoint with the largest allowed `yield_time_ms`, and if it still returns a `session_id`, keep waiting on that session (`write_stdin` with empty input) until it exits. Never end a turn while work is in flight and the checkpoint has not returned.
 7. Do not run `bin/fm-watch-arm.sh` as Codex's normal supervision command.
    If it is ever shelled anyway, a backgrounded, piped, or bundled anti-pattern is denied automatically by the PreToolUse seatbelt (`bin/fm-arm-pretool-check.sh`) registered in `.codex/hooks.json`.
 8. Failure or missing cycle only: drain queued wakes, inspect the failure, then start a fresh foreground checkpoint.
